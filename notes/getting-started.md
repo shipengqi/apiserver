@@ -1,4 +1,4 @@
-# apiserver
+# 启动一个最简单的 RESTful API 服务器
 Go 语言 API 开发中常用的组合是`gRPC + Protobuf`和`REST + JSON`。
 
 ## 什么是 REST
@@ -137,3 +137,163 @@ REST 相较 RPC 的优势：
 
 ## 启动 HTTP 服务
 在`main()`函数中主要做一些配置文件解析、程序初始化和路由加载之类的事情，最终调用`http.ListenAndServe()`在指定端口启动一个 HTTP 服务器。
+
+`main.go`：
+```go
+package main
+
+import (
+	"log"
+	"net/http"
+
+	"apiserver/router"
+
+	"github.com/gin-gonic/gin"
+)
+
+func main() {
+	// Create the Gin engine.
+	g := gin.New()
+
+    // gin middlewares
+	middlewares := []gin.HandlerFunc{}
+
+	// Routes.
+	router.Load(
+		// Cores.
+		g,
+
+		// Middlewares.
+		middlewares...,
+	)
+
+	log.Printf("Start to listening the incoming requests on http address: %s", ":8080")
+	log.Printf(http.ListenAndServe(":8080", g).Error())
+}
+```
+
+### 加载路由
+通过调用`router.Load`函数来加载路由，[demo01/router/router.go](https://github.com/lexkong/apiserver_demos/blob/master/demo01/router/router.go)：
+```go
+"apiserver/handler/sd"
+
+    ....
+
+// The health check handlers
+svcd := g.Group("/sd")
+{
+    svcd.GET("/health", sd.HealthCheck)
+    svcd.GET("/disk", sd.DiskCheck)
+    svcd.GET("/cpu", sd.CPUCheck)
+    svcd.GET("/ram", sd.RAMCheck)
+}
+```
+定义了一个叫`sd`的分组，在该分组下注册了`/health`、`/disk`、`/cpu`、`/ram` HTTP 路径，分别路由到`sd.HealthCheck`、`sd.DiskCheck`、
+`sd.CPUCheck`、`sd.RAMCheck`函数。`sd`分组主要用来检查 API Server 的状态：健康状况、服务器硬盘、CPU 和内存使用量。
+[demo01/handler/sd/check.go](https://github.com/lexkong/apiserver_demos/blob/master/demo01/handler/sd/check.go)
+
+### 设置 HTTP Header
+通过`g.Use()`来为每一个请求设置`Header`，在`router/router.go`文件中设置`Header`：
+```go
+    // 在处理某些请求时可能因为程序 bug 或者其他异常情况导致程序 panic，这时候为了不影响下一次请求的调用，
+    // 需要通过 gin.Recovery()来恢复 API  服务器
+    g.Use(gin.Recovery())
+    // 强制浏览器不使用缓存
+    g.Use(middleware.NoCache)
+    // 浏览器跨域 OPTIONS 请求设置
+    g.Use(middleware.Options)
+    // 一些安全设置
+    g.Use(middleware.Secure)
+```
+
+### 健康状态自检
+有时候 API 进程起来不代表 API 服务器正常，如：API 进程存在，但是服务器却不能对外提供服务。因此在启动 API 服务器时，如果能够最后做一个自检会更好些。
+在 apiserver 中添加自检程序，在启动 HTTP 端口前`go`一个`pingServer`协程，启动 HTTP 端口后，该协程不断地`ping/sd/health`路径，
+如果失败次数超过一定次数，则终止 HTTP 服务器进程。通过自检可以最大程度地保证启动后的 API 服务器处于健康状态。自检部分代码位于`main.go`中：
+```go
+func main() {
+    ....
+
+    // Ping the server to make sure the router is working.
+    go func() {
+        if err := pingServer(); err != nil {
+            log.Fatal("The router has no response, or it might took too long to start up.", err)
+        }
+        log.Print("The router has been deployed successfully.")
+    }()
+    ....
+}
+
+// pingServer pings the http server to make sure the router is working.
+func pingServer() error {
+    for i := 0; i < 10; i++ {
+        // Ping the server by sending a GET request to `/health`.
+        resp, err := http.Get("http://127.0.0.1:8080" + "/sd/health")
+        if err == nil && resp.StatusCode == 200 {
+            return nil
+        }
+
+        // Sleep for a second to continue the next ping.
+        log.Print("Waiting for the router, retry in 1 second.")
+        time.Sleep(time.Second)
+    }
+    return errors.New("Cannot connect to the router.")
+}
+```
+`http.Get`向`http://127.0.0.1:8080/sd/health`发送 HTTP GET 请求，如果函数正确执行并且返回的 HTTP StatusCode 为 200，则说明 API 服务器可用，
+`pingServer`函数输出部署成功提示；如果超过指定 10 次，`pingServer`直接终止 API Server 进程。
+
+### 编译源码
+下载[源码](https://github.com/lexkong/apiserver_demos)。将`apiserver_demos/demo01`复制为`$GOPATH/src/apiserver`。
+
+首次编译需要下载 vendor（依赖管理工具） 包:
+```bash
+$ cd $GOPATH/src
+$ git clone https://github.com/lexkong/vendor
+```
+
+编译：
+```bash
+$ cd $GOPATH/src/apiserver
+# 每次编译前对 Go 源码进行格式化和代码静态检查
+$ gofmt -w .
+$ go tool vet .
+$ go build -v .
+```
+### 安装 Dep
+Dep 也是Go的依赖管理工具。
+```bash
+$ curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+```
+
+保证`$GOPATH/bin`存在。建议配置环境变量`GOBIN`为`$GOPATH/bin`。
+
+### 测试API
+```bash
+# 启动 api server
+$ ./apiserver
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:   export GIN_MODE=release
+ - using code:  gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /sd/health                --> apiserver/handler/sd.HealthCheck (5 handlers)
+[GIN-debug] GET    /sd/disk                  --> apiserver/handler/sd.DiskCheck (5 handlers)
+[GIN-debug] GET    /sd/cpu                   --> apiserver/handler/sd.CPUCheck (5 handlers)
+[GIN-debug] GET    /sd/ram                   --> apiserver/handler/sd.RAMCheck (5 handlers)
+Start to listening the incoming requests on http address: :8080
+The router has been deployed successfully.
+
+# 测试
+$ curl -XGET http://127.0.0.1:8080/sd/health
+OK
+
+$ curl -XGET http://127.0.0.1:8080/sd/disk
+OK - Free space: 16321MB (15GB) / 51200MB (50GB) | Used: 31%
+
+$ curl -XGET http://127.0.0.1:8080/sd/cpu
+CRITICAL - Load average: 2.39, 2.13, 1.97 | Cores: 2
+
+$ curl -XGET http://127.0.0.1:8080/sd/ram
+OK - Free space: 455MB (0GB) / 8192MB (8GB) | Used: 5%
+```
