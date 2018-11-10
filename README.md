@@ -1,2 +1,2 @@
 # apiserver
-An APIserver implemented in Go Lang.
+An API server implemented in Go Lang.
