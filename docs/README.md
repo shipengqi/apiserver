@@ -130,4 +130,10 @@ REST 相较 RPC 的优势：
     └── vendor.json
 ```
 
+## 选择 web 框架
+[RESTful Web 框架 性能对比](https://github.com/gin-gonic/gin/blob/master/BENCHMARKS.md)。
 
+我们这里使用[Gin](https://github.com/gin-gonic/gin)，[简介](https://www.jianshu.com/p/a31e4ee25305)。
+
+## 启动 HTTP 服务
+在`main()`函数中主要做一些配置文件解析、程序初始化和路由加载之类的事情，最终调用`http.ListenAndServe()`在指定端口启动一个 HTTP 服务器。
