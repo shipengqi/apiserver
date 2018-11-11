@@ -213,3 +213,8 @@ $ curl -XPOST -H "Content-Type: application/json" http://127.0.0.1:8080/v1/user 
         log.Debug("err type is ErrUserNotFound")
     }
 ```
+演示了如何通过定制错误方便地对比是不是某个错误，在该请求中，apiserver 会输出如下错误：
+![](images/errno.jpg)
+
+可以看到在后台日志中会输出敏感信息`username can not found in db: xx.xx.xx.xx`，但是返回给用户
+的`message （{"code":20102,"message":"The user was not found. This is add message."}`不包含这些敏感信息，可以供前端直接对外展示。
