@@ -2,7 +2,6 @@ package config
 
 import (
 	"strings"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/lexkong/log"
