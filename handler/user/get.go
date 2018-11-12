@@ -1,6 +1,7 @@
 package user
 
 import (
+	. "apiserver/handler"
 	"apiserver/model"
 	"apiserver/pkg/errno"
 
