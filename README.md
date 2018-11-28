@@ -1,5 +1,5 @@
 # apiserver
-An API server implemented in Go Lang.
+基于 Go 实现的 API server.
 
 ## 目录
 
