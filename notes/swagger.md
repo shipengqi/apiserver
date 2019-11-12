@@ -33,7 +33,7 @@ $ cd $GOPATH/src/github.com/swaggo
 $ git clone https://github.com/swaggo/gin-swagger
 ```
 
-4. 在`router/router.go`中添加`swagger`路由
+4. 在 `router/router.go` 中添加 `swagger` 路由
 （详见 [demo17/router/router.go](https://github.com/lexkong/apiserver_demos/blob/master/demo17/router/router.go)）
 ![](images/swagger.jpg)
 
@@ -55,6 +55,8 @@ import (
 // @Produce  json
 // @Param user body user.CreateRequest true "Create a new user"
 // @Success 200 {object} user.CreateResponse "{"code":0,"message":"OK","data":{"username":"kong"}}"
+// @Failure 400 {object} web.APIError "We need ID!!"
+// @Failure 404 {object} web.APIError "Can not find ID"
 // @Router /user [post]
 func Create(c *gin.Context) {
     ...
@@ -93,4 +95,5 @@ $ swag init
 > API 文档有更新时，要重新执行 swag init 并重新编译 apiserver。
 
 ## 查看文档
-编译执行`./apiserver`启动 apiserver 后，在浏览器中打开：`http://localhost:8080/swagger/index.html`访问 Swagger 2.0 API文档。
+编译执行 `./apiserver` 启动 apiserver 后，在浏览器中打开：`http://localhost:8080/swagger/index.html`访问 Swagger 2.0 API 
+文档。

@@ -53,6 +53,7 @@ var (
 
 从 HTTP 消息体解析参数，前面小节已经介绍了。
 
+### 参数校验
 参数校验这里用的是`gopkg.in/go-playground/validator.v9`包（详见 [go-playground/validator](https://github.com/go-playground/validator)），实际开发过程中，
 该包可能不能满足校验需求，这时候可在程序中加入自己的校验逻辑，比如在`handler/user/creater.go`中添加校验函数`checkParam`：
 ```go
@@ -90,6 +91,9 @@ func (r *CreateRequest) checkParam() error {
 	return nil
 }
 ```
+参数校验也可以使用 [beego validation](https://beego.me/docs/mvc/controller/validation.md)。
+
+### 密码加密
 例子通过`Encrypt()`对密码进行加密：
 ```go
 // Encrypt the user password.
