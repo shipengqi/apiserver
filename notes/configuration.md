@@ -2,8 +2,11 @@
 本小节源码下载路径：[demo02](https://github.com/lexkong/apiserver_demos/tree/master/demo02)，
 是基于 [demo01](https://github.com/lexkong/apiserver_demos/tree/master/demo01) 来开发的。
 
+本项目使用的配置管理工具是 [Viper](https://github.com/spf13/viper)。也可以使用 
+[gin-ini/ini](https://github.com/go-ini/ini)。
+
 ## Viper
-[Viper](https://github.com/spf13/viper)是国外大神 spf13 编写的开源配置解决方案。特性：
+[Viper](https://github.com/spf13/viper) 是国外大神 spf13 编写的开源配置解决方案。特性：
 - 设置默认值
 - 可以读取如下格式的配置文件：JSON、TOML、YAML、HCL
 - 监控配置文件改动，并热加载配置文件
@@ -15,14 +18,15 @@
 
 Viper 配置读取顺序：
 
-- `viper.Set()`所设置的值
+- `viper.Set()` 所设置的值
 - 命令行 flag
 - 环境变量
 - 配置文件
 - 配置中心：`etcd/consul`
 - 默认值
 
-Viper 用起来很方便，在初始化配置文件后，读取配置只需要调用`viper.GetString()`、`viper.GetInt()`和`viper.GetBool()`等函数即可。
+Viper 用起来很方便，在初始化配置文件后，读取配置只需要调用 `viper.GetString()`、`viper.GetInt()` 和 `viper.GetBool()` 等函数
+即可。
 Viper 也可以非常方便地读取多个层级的配置，比如这样一个 YAML 格式的配置：
 ```yaml
  common:
@@ -69,11 +73,11 @@ Viper 也可以非常方便地读取多个层级的配置，比如这样一个 Y
  }
 ```
 
-`main`函数中增加了`config.Init(*cfg)`调用，用来初始化配置，`cfg`变量值从命令行 flag 传入，可以传值，比如`./apiserver -c config.yaml`，
-也可以为空，如果为空会默认读取`conf/config.yaml`。
+`main` 函数中增加了 `config.Init(*cfg)` 调用，用来初始化配置，`cfg` 变量值从命令行 flag 传入，可以传值，比如 
+`./apiserver -c config.yaml`，也可以为空，如果为空会默认读取 `conf/config.yaml`。
 
 ### 解析配置
-`main`函数通过`config.Init`函数来解析并 watch 配置文件，`config.go`源码为：
+`main` 函数通过 `config.Init` 函数来解析并 watch 配置文件，`config.go` 源码为：
 ```go
  package config
 
@@ -133,10 +137,10 @@ Viper 也可以非常方便地读取多个层级的配置，比如这样一个 Y
  }
 ```
 
-`config.Init()`通过`initConfig()`函数来解析配置文件，通过`watchConfig()`函数`watch`配置文件，两个函数解析如下：
+`config.Init()` 通过 `initConfig()` 函数来解析配置文件，通过 `watchConfig()` 函数 `watch` 配置文件，两个函数解析如下：
 1. `func (c *Config) initConfig() error`
-设置并解析配置文件。如果指定了配置文件`*cfg`不为空，则解析指定的配置文件，否则解析默认的配置文件`conf/config.yaml`。通过指定配置文件可以很方便地
-连接不同的环境（开发环境、测试环境）并加载不同的配置，方便开发和测试。
+设置并解析配置文件。如果指定了配置文件 `*cfg` 不为空，则解析指定的配置文件，否则解析默认的配置文件 `conf/config.yaml`。通过指
+定配置文件可以很方便地连接不同的环境（开发环境、测试环境）并加载不同的配置，方便开发和测试。
 
 通过如下设置
 ```go
@@ -146,16 +150,17 @@ replacer := strings.NewReplacer(".", "_")
 ```
 可以使程序读取环境变量，具体效果稍后会演示。
 
-`config.Init`函数中的`viper.ReadInConfig()`函数最终会调用 Viper 解析配置文件。
+`config.Init` 函数中的 **`viper.ReadInConfig()` 函数最终会调用 Viper 解析配置文件**。
 
 2. `func (c *Config) watchConfig()`
 
-通过该函数的`viper`设置，可以使`viper`监控配置文件变更，如有变更则热更新程序。所谓热更新是指：可以不重启 API 进程，使 API 加载最新配置项的值。
+通过该函数的 `viper` 设置，可以使 `viper` 监控配置文件变更，如有变更则热更新程序。所谓热更新是指：可以不重启 API 进程，使 API 加载
+最新配置项的值。
 
 ## 配置并读取配置
-API 服务器端口号可能经常需要变更，API 服务器启动时间可能会变长，自检程序超时时间需要是可配的（通过设置次数），另外 API 需要根据不同的开发模式
-（开发、生产、测试）来匹配不同的行为。开发模式也需要是可配置的，这些都可以在配置文件中配置，新建配置文件`conf/config.yaml`（默认配置文件名字固定
-为 config.yaml），config.yaml 的内容为：
+API 服务器端口号可能经常需要变更，API 服务器启动时间可能会变长，自检程序超时时间需要是可配的（通过设置次数），另外 API 需要根据不
+同的开发模式（开发、生产、测试）来匹配不同的行为。开发模式也需要是可配置的，这些都可以在配置文件中配置，新建配置文
+件 `conf/config.yaml`（默认配置文件名字固定为 config.yaml），config.yaml 的内容为：
 ```yaml
 runmode: debug               # 开发模式, debug, release, test
 addr: :6663                  # HTTP绑定端口
@@ -163,13 +168,13 @@ name: apiserver              # API Server的名字
 url: http://127.0.0.1:6663   # pingServer函数请求的API服务器的ip:port
 max_ping_count: 10           # pingServer函数尝试的次数
 ```
-在`main`函数中将相应的配置改成从配置文件读取，需要替换的配置见下图中红框部分。
+在 `main` 函数中将相应的配置改成从配置文件读取，需要替换的配置见下图中红框部分。
 ![config1](images/config1.jpg)
 
 替换后，代码为：
 ![config2](images/config2.jpg)
 
-另外根据配置文件的`runmode`调用`gin.SetMode`来设置`gin`的运行模式：
+另外根据配置文件的 `runmode` 调用 `gin.SetMode` 来设置 `gin` 的运行模式：
 ```go
 func main() {
     pflag.Parse()
@@ -186,14 +191,96 @@ func main() {
 
 }
 ```
-`gin`有 3 种运行模式：`debug`、`release`和`test`，其中`debug`模式会打印很多`debug`信息。
+`gin` 有 3 种运行模式：`debug`、`release` 和 `test`，其中 `debug` 模式会打印很多 `debug` 信息。
 
 接下里就可以编译运行。
 
+### 不同的模式加载不同的配置文件
+可以为不同的开发模式，提供不同的配置文件，如下面的代码
+```go
+ func (c *Config) initConfig() error {
+    filename := "config"  // 默认的配置文件名
+    viper.AddConfigPath("conf") // 配置文件路径
+    if c.Mode !== "" {
+        filename = c.Mode + ".config"
+    }
+    viper.SetConfigName(filename)
+ 	
+ 	viper.SetConfigType("yaml") // 设置配置文件格式为YAML
+    ...
+ }
+```
+`c.Mode` 可以通过命令行参数或者环境变量传入。
+
+上面的代码，当传入的模式是 `release` 时，就会加载 `release.config.yaml` 文件的配置。
+
+## 配置管理
+在实际开发中，配置应该统一管理。
+
+### 映射结构体
+```go
+var Conf = &Config{}
+
+type Config struct {
+	Name      string
+	Conf      string
+	Mode      string
+	EnvPrefix string
+	InCluster bool
+	Http      *struct {
+		Addr    string
+		Cert    string
+		Key     string
+	}
+	Vault *vault.Config
+}
+
+func (c *Config) initConfig() error {
+    ...
+	if err := viper.ReadInConfig(); err != nil { // 解析配置，这一步很重要 !!!
+		return err
+	}
+	if err := viper.Unmarshal(c); err != nil { // Unmarshal 映射到结构体
+		return err
+	}
+	return nil
+}
+
+func Init() error {
+	if err := Conf.initConfig(); err != nil {
+		return fmt.Errorf("init config: %v", err)
+	}
+
+	Conf.initLog()
+
+	return nil
+}
+```
+
+上面的代码 `Conf` 是 `config` 包暴露的一个全局变量，使用 `viper.Unmarshal(c)` 将配置文件映射到了 `Conf`。
+
+在项目中可以 `config.Conf` 来读取配置。
+
+我的配置文件：
+```yaml
+name: "suite-installer"    # Name
+mode: debug                # debug, release
+envPrefix: APISERVER2
+inCluster: false
+http:
+  addr: ":8443"            # HTTP port
+  cert: ""
+  key: ""
+vault:
+  role: "kubernetes-vault"
+  serviceAccount: "kubernetes-vault"
+```
+**注意配置的命名要使用驼峰命令**。
+
 ## Viper 高级用法
 ### 从环境变量读取配置
-Viper 可以从环境变量读取配置，这是个非常有用的功能。现在越来越多的程序是运行在 Kubernetes 容器集群中的，在 API 服务器迁移到容器集群时，
-可以直接通过 Kubernetes 来设置环境变量，然后程序读取设置的环境变量来配置 API 服务器。
+Viper 可以从环境变量读取配置，这是个非常有用的功能。现在越来越多的程序是运行在 Kubernetes 容器集群中的，在 API 服务器迁移到容器
+集群时，可以直接通过 Kubernetes 来设置环境变量，然后程序读取设置的环境变量来配置 API 服务器。
 例如，通过环境变量来设置 API Server 端口：
 ```bash
 $ export APISERVER_ADDR=:7777
@@ -210,20 +297,21 @@ $ ./apiserver
 Start to listening the incoming requests on http address: :7777
 The router has been deployed successfully.
 ```
-从输出可以看到，设置`APISERVER_ADDR=:7777`和`APISERVER_URL=http://127.0.0.1:7777`后，启动 apiserver，API 服务器的端口变为`7777`。
+从输出可以看到，设置 `APISERVER_ADDR=:7777` 和 `APISERVER_URL=http://127.0.0.1:7777` 后，启动 apiserver，API 服务器的端口
+变为 `7777`。
 
-环境变量名格式为`config/config.go`文件中`viper.SetEnvPrefix("APISERVER")`所设置的前缀和配置名称大写，二者用`_`连接，比如`APISERVER_RUNMODE`。
-如果配置项是嵌套的，情况可类推，比如：
+环境变量名格式为 `config/config.go` 文件中 `viper.SetEnvPrefix("APISERVER")` 所设置的前缀和配置名称大写，二者用 `_` 连接，
+比如 `APISERVER_RUNMODE`。如果配置项是嵌套的，情况可类推，比如：
 ```yaml
 ....
-max_ping_count: 10           # pingServer函数try的次数
+max_ping_count: 10           # pingServer 函数 try 的次数
 db:
   name: db_apiserver
 ```
-对应的环境变量名为`APISERVER_DB_NAME`。
+对应的环境变量名为 `APISERVER_DB_NAME`。
 
 ### 热更新
-在`main`函数中添加如下测试代码（`for {}`部分，循环打印`runmode`的值）：
+在 `main` 函数中添加如下测试代码（`for {}` 部分，循环打印 `runmode` 的值）：
 ```go
 import (
     "fmt"
@@ -249,5 +337,5 @@ func main() {
     ....
 }
 ```
-编译并启动 apiserver 后，修改配置文件中`runmode`为`test`，可以看到`runmode`的值从`debug`变为`test`：
+编译并启动 apiserver 后，修改配置文件中 `runmode` 为 `test`，可以看到 `runmode` 的值从 `debug` 变为 `test`：
 ![hotload](images/hotload.jpg)
