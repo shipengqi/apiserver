@@ -1,6 +1,10 @@
 # apiserver
 基于 Go 实现的 API server.
 
+文章内容来自 [雷克斯](https://github.com/lexkong) 的小册 [基于 Go 语言构建企业级的 RESTful API 服务](https://juejin.im/book/5b0778756fb9a07aa632301e) ，
+
+请大家支持正版。
+
 ## 目录
 
 - [基础](notes/getting-started.md)
